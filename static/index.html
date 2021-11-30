@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <!-- Required head content -->
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <title>Quiz</title>
+    </head>
+
+    <!-- The main body -->
+    <body>
+        <h1>Quiz 1</h1>
+
+        <!-- Adds a link to start the quiz -->
+        <a href='javascript:getQuestions()'> Start the Quiz</a>
+        <div id='quizDiv'></div>
+    </body>
+
+    <!-- The main script -->
+    <script>
+
+        // Question and counter vars
+        let question;
+        let counter;
+
+        // Gets the question json, and sets displayQuestions to ready
+        function getQuestions() {   
+            let xReq = new XMLHttpRequest();
+            xReq.onreadystatechange = displayQuestions;
+
+            xReq.open('GET', '/questionsInJson', true);
+            xReq.send();
+        }
+
+        // Displays the questions
+        function displayQuestions() {
+            if (this.readyState == 4 && this.status == 200) {
+
+                // Setting quizDiv var
+                let quizDiv = document.getElementById('quizDiv');
+
+                // Getting the question list
+                let questionList = JSON.parse(this.responseText);
+
+                // Setting up the content, id, and question var
+                let content = '';
+                let id = 0;
+                question = 0;
+
+                // For every question in the list
+                for (i of questionList) {
+
+                    // Sets the optionList to the number of options and sets the counter to 0
+                    let optionList = i.options;
+                    counter = 0; 
+
+                    // Adds to content
+                    content += '<div>';
+                    content += '<div>';
+                    content += `<label>${i.stem}</label><br>`;
+
+                    // For every option in the list
+                    for (j of optionList) {
+
+                        // Display the option
+                        content += `<input type="radio" id="${id}" name="${question}" value="${counter}" onclick="clickedButton(this.name,this.value);">
+                        <label for="${id}">${j}</label><br>`;
+                        
+                        // Increase the counter and id by 1
+                        counter++;
+                        id++;         
+                    }
+
+                    // Increase the question by 1
+                    question++;
+                }
+            
+                // After questions are displayed, display the submit button and total
+                content += '<button id="submit_btn" onclick ="submitQuiz();">Submit</button>';
+                content += '</div>';
+                content += '<div id="totalDiv"></div>';
+                content += '</div>';
+                content += '\n\n';
+                quizDiv.innerHTML = content;
+            }
+        }
+    
+        // When the answers are clicked
+        function clickedButton (buttonQuestion, buttonAnswer) {
+            let xReq = new XMLHttpRequest();
+            xReq.onreadystatechange = displayAnswer;
+
+            // Give the answer
+            xReq.open('GET','/answers?question='+buttonQuestion+'&counter='+buttonAnswer,true);
+            xReq.send();
+        }
+
+        // Display the answer using an alert
+        function displayAnswer() {
+            if (this.readyState == 4 && this.status == 200) {
+                alert(this.responseText);
+            }
+        }
+
+        // Button to submit quiz
+        function submitQuiz() {
+            let xReq = new XMLHttpRequest();
+            xReq.onreadystatechange = displayTotal;
+
+            // The input to the answer and options array
+            let a = document.querySelectorAll('input');
+            var options = [];
+
+            // Gets which buttons are checked
+            for (i of a) {
+                if (i.checked) {
+                    options.push(i.value);
+                }
+            }
+
+            // Sends the clicked options
+            xReq.open('GET','/total?a1='+options[0]+'&a2='+options[1]+'&a3='+options[2]+'&a4='+options[3]+'&a5='+ options[4],true);
+            xReq.send(); 
+        }
+
+        // Shows the total mark display
+        function displayTotal() {
+            if (this.readyState == 4 && this.status == 200) {
+                let totalDiv = document.getElementById('totalDiv');
+                totalDiv.innerHTML = this.responseText;
+            }
+        }
+    </script>
+</html>
